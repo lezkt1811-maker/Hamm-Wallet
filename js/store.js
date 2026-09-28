@@ -15,6 +15,8 @@ const STORE = {
   KEYS: {
     PRODUCTS: 'stickershop_products',
     ORDERS: 'stickershop_orders',
+    PENDING_IMAGE: 'stickershop_pending_image',
+    EDITOR_DRAFT: 'stickershop_editor_draft',
     EXPENSES: 'stickershop_expenses',
     CART: 'stickershop_cart',
     CUSTOM_REQUESTS: 'stickershop_custom_requests',
@@ -41,6 +43,27 @@ const STORE = {
 
   uid(prefix) {
     return (prefix || 'id') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  },
+
+  // ---------- Sticker Studio -> Product Creator handoff ----------
+  setPendingEditorImage(dataUrl) {
+    this._write(this.KEYS.PENDING_IMAGE, dataUrl);
+  },
+  takePendingEditorImage() {
+    const v = this._read(this.KEYS.PENDING_IMAGE, null);
+    localStorage.removeItem(this.KEYS.PENDING_IMAGE);
+    return v;
+  },
+
+  // ---------- Sticker Studio save/resume draft ----------
+  saveEditorDraft(draft) {
+    this._write(this.KEYS.EDITOR_DRAFT, draft);
+  },
+  getEditorDraft() {
+    return this._read(this.KEYS.EDITOR_DRAFT, null);
+  },
+  clearEditorDraft() {
+    localStorage.removeItem(this.KEYS.EDITOR_DRAFT);
   },
 
   // ---------- SETTINGS ----------

@@ -1,7 +1,12 @@
 /*
-  editor.js — sticker creator: upload, crop/rotate/zoom, sharpen/contrast/
-  saturation, basic background removal, shape + outline + white border +
-  glow, text, DPI/print-size check, high-res + transparent PNG export.
+  editor.js — Sticker Studio.
+
+  All the original pixel-processing functions (applyContrastSaturation,
+  applySharpen, removeBackground, makeSolidSilhouette, drawRing,
+  shapeClipPath, roundedRectPath, and the render() pipeline) are unchanged
+  from the first version of this tool — only the surrounding interaction
+  layer (tool tabs, undo/redo, presets, draggable text, before/after,
+  save/resume, Add to Shop) is new.
 
   All effect sizes (outline thickness, glow blur, font size, sharpen
   radius) are stored as PERCENTAGES of canvas width, not fixed pixels —
@@ -12,6 +17,8 @@
   renderSiteHeader('');
   renderSiteFooter();
 
+  const PREVIEW_SIZE = 700;
+
   const canvas = document.getElementById('stickerCanvas');
   const ctx = canvas.getContext('2d');
   const controls = document.getElementById('editorControls');
@@ -19,9 +26,25 @@
   const changeImageBtn = document.getElementById('changeImageBtn');
   changeImageBtn.addEventListener('click', () => uploadInput.click());
 
-  // First upload uses the full file-picker input; after that, swap in a
-  // small "Change Image" button instead so the sticky preview bar at the
-  // top of the screen stays as compact as possible.
+  const toolbar = document.getElementById('editorToolbar');
+  const actionBar = document.getElementById('editorActionBar');
+  const presetStrip = document.getElementById('presetStrip');
+  const beforeAfterBtn = document.getElementById('beforeAfterBtn');
+  const dpiBadgeTop = document.getElementById('dpiBadgeTop');
+
+  let sourceImg = null; // the uploaded <img>
+  let bgColor = null;   // {r,g,b} sampled background color for removal
+  let pickingBg = false;
+  let shape = 'die-cut';
+  let textPos = 'top';
+  let textX = 50, textY = 15; // percentages of canvas width/height
+  let activeTool = 'crop';
+  let showingBefore = false;
+  let draggingText = false;
+
+  // ---------- First upload uses the full file-picker input; after that,
+  // swap in a small "Change Image" button so the sticky preview bar stays
+  // as compact as possible. ----------
   function collapseUploadRow() {
     uploadInput.style.display = 'none';
     changeImageBtn.style.display = 'inline-block';
@@ -35,12 +58,6 @@
   }
   updateStickyOffset();
   window.addEventListener('resize', updateStickyOffset);
-
-  let sourceImg = null; // the uploaded <img>
-  let bgColor = null;   // {r,g,b} sampled background color for removal
-  let pickingBg = false;
-  let shape = 'die-cut';
-  let textPos = 'top';
 
   const state = () => ({
     cropTop: +document.getElementById('cropTop').value,
@@ -65,53 +82,151 @@
   });
   state.rotate90 = 0;
 
-  // ---------- Upload ----------
+  // =====================================================================
+  // Tool tabs — only the active tool's panel is shown at once
+  // =====================================================================
+  const toolPanels = document.querySelectorAll('.tool-panel');
+  const toolTabButtons = toolbar.querySelectorAll('button[data-tool]');
+
+  function setActiveTool(tool) {
+    activeTool = tool;
+    toolPanels.forEach(p => { p.hidden = p.dataset.tool !== tool; });
+    toolTabButtons.forEach(b => b.classList.toggle('active', b.dataset.tool === tool));
+    // Only steal touch gestures on the canvas while actively placing text —
+    // otherwise the page must scroll normally.
+    canvas.style.touchAction = tool === 'text' ? 'none' : 'manipulation';
+    if (tool !== 'cutout') pickingBg = false;
+    updatePickBgButtonState();
+    // Deliberately no auto-scroll here: with a sticky top bar AND fixed
+    // bottom bars, any approximate scroll offset risks landing a control
+    // in the dead zone behind one of them. The panel switches in place;
+    // if you're scrolled down, a short manual scroll finds its top.
+  }
+  toolTabButtons.forEach(btn => btn.addEventListener('click', () => setActiveTool(btn.dataset.tool)));
+
+  function showEditorChrome() {
+    controls.style.display = 'block';
+    toolbar.style.display = 'flex';
+    actionBar.style.display = 'flex';
+    presetStrip.style.display = 'flex';
+    beforeAfterBtn.style.display = 'inline-block';
+    dpiBadgeTop.style.display = 'block';
+  }
+
+  // =====================================================================
+  // Upload / load image (shared by fresh upload and "resume draft")
+  // =====================================================================
+  function loadImageFromDataUrl(dataUrl, onReady) {
+    const img = new Image();
+    img.onload = () => {
+      sourceImg = img;
+      showEditorChrome();
+      collapseUploadRow();
+      if (onReady) {
+        onReady();
+      } else {
+        bgColor = null;
+        render(canvas, PREVIEW_SIZE);
+        updateDpiReadout();
+        resetHistoryWith(getSnapshot());
+      }
+      updateStickyOffset();
+    };
+    img.src = dataUrl;
+  }
+
   uploadInput.addEventListener('change', () => {
     const file = uploadInput.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        sourceImg = img;
-        bgColor = null;
-        controls.style.display = 'block';
-        collapseUploadRow();
-        render(canvas, 700);
-        updateDpiReadout();
-        updateStickyOffset();
-      };
-      img.src = reader.result;
-    };
+    reader.onload = () => loadImageFromDataUrl(reader.result);
     reader.readAsDataURL(file);
   });
 
-  // ---------- Rotate 90 buttons ----------
-  document.getElementById('rotateLeftBtn').onclick = () => { state.rotate90 = ((state.rotate90 || 0) - 90 + 360) % 360; render(canvas, 700); };
-  document.getElementById('rotateRightBtn').onclick = () => { state.rotate90 = ((state.rotate90 || 0) + 90) % 360; render(canvas, 700); };
+  // ---------- Resume a saved draft, if one exists ----------
+  (function checkForDraft() {
+    const draft = STORE.getEditorDraft();
+    if (!draft) return;
+    const banner = document.getElementById('resumeDraftBanner');
+    banner.style.display = 'block';
+    document.getElementById('resumeDraftBtn').onclick = () => {
+      loadImageFromDataUrl(draft.image, () => {
+        applySnapshot(draft.snapshot);
+        resetHistoryWith(draft.snapshot);
+      });
+      banner.style.display = 'none';
+    };
+    document.getElementById('discardDraftBtn').onclick = () => {
+      STORE.clearEditorDraft();
+      banner.style.display = 'none';
+    };
+  })();
+
+  // =====================================================================
+  // Rotate 90 buttons
+  // =====================================================================
+  document.getElementById('rotateLeftBtn').onclick = () => { state.rotate90 = ((state.rotate90 || 0) - 90 + 360) % 360; render(canvas, PREVIEW_SIZE); commitHistory(); };
+  document.getElementById('rotateRightBtn').onclick = () => { state.rotate90 = ((state.rotate90 || 0) + 90) % 360; render(canvas, PREVIEW_SIZE); commitHistory(); };
 
   // ---------- Shape buttons ----------
+  function syncShapeButtons() {
+    document.querySelectorAll('[data-shape]').forEach(b => b.classList.toggle('active', b.dataset.shape === shape));
+  }
   document.querySelectorAll('[data-shape]').forEach(btn => {
-    btn.onclick = () => {
-      document.querySelectorAll('[data-shape]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      shape = btn.dataset.shape;
-      render(canvas, 700);
-    };
+    btn.onclick = () => { shape = btn.dataset.shape; syncShapeButtons(); render(canvas, PREVIEW_SIZE); commitHistory(); };
   });
 
-  // ---------- Text position buttons ----------
+  // ---------- Text quick-position buttons (dragging can also move text) ----------
+  function syncTextPosButtons() {
+    document.querySelectorAll('[data-textpos]').forEach(b => b.classList.toggle('active', b.dataset.textpos === textPos));
+  }
   document.querySelectorAll('[data-textpos]').forEach(btn => {
     btn.onclick = () => {
-      document.querySelectorAll('[data-textpos]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
       textPos = btn.dataset.textpos;
-      render(canvas, 700);
+      textX = 50;
+      textY = textPos === 'top' ? 15 : textPos === 'bottom' ? 85 : 50;
+      syncTextPosButtons();
+      render(canvas, PREVIEW_SIZE);
+      commitHistory();
     };
   });
 
-  // ---------- Background pick ----------
-  document.getElementById('pickBgBtn').onclick = () => { pickingBg = true; };
+  // ---------- Draggable text: tap or drag directly on the picture ----------
+  function canvasPointFromEvent(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) / rect.width * canvas.width,
+      y: (e.clientY - rect.top) / rect.height * canvas.height,
+    };
+  }
+  function moveTextTo(pt) {
+    textX = Math.max(2, Math.min(98, (pt.x / canvas.width) * 100));
+    textY = Math.max(2, Math.min(98, (pt.y / canvas.height) * 100));
+    textPos = null; // no longer matches a preset button
+    syncTextPosButtons();
+    render(canvas, PREVIEW_SIZE);
+  }
+  canvas.addEventListener('pointerdown', e => {
+    if (activeTool !== 'text' || !sourceImg) return;
+    draggingText = true;
+    moveTextTo(canvasPointFromEvent(e));
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!draggingText) return;
+    moveTextTo(canvasPointFromEvent(e));
+  });
+  window.addEventListener('pointerup', () => {
+    if (draggingText) { draggingText = false; commitHistory(); }
+  });
+
+  // =====================================================================
+  // Background pick (Cutout)
+  // =====================================================================
+  function updatePickBgButtonState() {
+    document.getElementById('pickBgBtn').classList.toggle('active', pickingBg);
+    document.getElementById('pickBgBtn').textContent = pickingBg ? '🎯 Tap the picture now…' : '🎯 Pick Color — tap the picture';
+  }
+  document.getElementById('pickBgBtn').onclick = () => { pickingBg = !pickingBg; updatePickBgButtonState(); };
   document.getElementById('autoBgBtn').onclick = () => {
     if (!sourceImg) return;
     const tmp = document.createElement('canvas');
@@ -123,9 +238,10 @@
     corners.forEach(([x, y]) => { const d = tctx.getImageData(x, y, 1, 1).data; r += d[0]; g += d[1]; b += d[2]; });
     bgColor = { r: r / 4, g: g / 4, b: b / 4 };
     updateBgSwatch();
-    render(canvas, 700);
+    render(canvas, PREVIEW_SIZE);
+    commitHistory();
   };
-  document.getElementById('clearBgBtn').onclick = () => { bgColor = null; updateBgSwatch(); render(canvas, 700); };
+  document.getElementById('clearBgBtn').onclick = () => { bgColor = null; updateBgSwatch(); render(canvas, PREVIEW_SIZE); commitHistory(); };
   canvas.addEventListener('click', e => {
     if (!pickingBg || !sourceImg) return;
     const rect = canvas.getBoundingClientRect();
@@ -134,23 +250,28 @@
     const d = ctx.getImageData(x, y, 1, 1).data;
     bgColor = { r: d[0], g: d[1], b: d[2] };
     pickingBg = false;
+    updatePickBgButtonState();
     updateBgSwatch();
-    render(canvas, 700);
+    render(canvas, PREVIEW_SIZE);
+    commitHistory();
   });
   function updateBgSwatch() {
     const el = document.getElementById('bgColorSwatch');
     el.innerHTML = bgColor
-      ? `<span class="stock-badge ok">Background: <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgb(${bgColor.r|0},${bgColor.g|0},${bgColor.b|0});vertical-align:middle;margin-left:4px"></span></span>`
-      : '<span class="dim small">No background color selected.</span>';
+      ? `<span class="stock-badge ok">Removing background near: <span class="color-chip" style="background:rgb(${bgColor.r | 0},${bgColor.g | 0},${bgColor.b | 0})"></span></span>`
+      : '<span class="dim small">No background color selected yet.</span>';
   }
 
-  // ---------- All inputs re-render live ----------
+  // =====================================================================
+  // All inputs re-render live; 'change' (on release) commits undo history
+  // =====================================================================
   const liveInputs = ['cropTop', 'cropBottom', 'cropLeft', 'cropRight', 'rotateFine', 'zoom',
     'sharpen', 'contrast', 'saturation', 'bgTolerance', 'outlineThickness', 'outlineColor',
     'whiteBorder', 'glow', 'glowColor', 'textContent', 'textSize', 'textColor'];
   liveInputs.forEach(id => {
     const el = document.getElementById(id);
-    el.addEventListener('input', () => { syncLabels(); render(canvas, 700); });
+    el.addEventListener('input', () => { syncLabels(); render(canvas, PREVIEW_SIZE); });
+    el.addEventListener('change', () => commitHistory());
   });
 
   function syncLabels() {
@@ -174,7 +295,153 @@
 
   document.getElementById('targetSize').addEventListener('change', updateDpiReadout);
 
-  // ---------- Pixel helpers ----------
+  // =====================================================================
+  // Presets — one-tap stylistic combinations, fun before you touch a slider
+  // =====================================================================
+  const PRESETS = {
+    vivid: { contrast: 25, saturation: 45, sharpen: 30 },
+    'y2k-glossy': { contrast: 15, saturation: 20, sharpen: 20, outlineThickness: 3, outlineColor: '#ff2fb0', glow: 4, glowColor: '#3ffbe0' },
+    'sticker-pop': { contrast: 20, saturation: 30, sharpen: 40, whiteBorder: 4, outlineThickness: 2, outlineColor: '#000000' },
+    soft: { contrast: -10, saturation: -10, sharpen: 0, glow: 2, glowColor: '#ffffff' },
+    'high-contrast': { contrast: 60, saturation: 10, sharpen: 50 },
+  };
+  presetStrip.querySelectorAll('button[data-preset]').forEach(btn => {
+    btn.onclick = () => {
+      if (!sourceImg) return;
+      const p = PRESETS[btn.dataset.preset];
+      if (!p) return;
+      Object.entries(p).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val; });
+      syncLabels();
+      render(canvas, PREVIEW_SIZE);
+      commitHistory();
+    };
+  });
+
+  // =====================================================================
+  // Reset current tool only (not the whole design)
+  // =====================================================================
+  const TOOL_DEFAULTS = {
+    crop: { cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, rotateFine: 0, zoom: 100 },
+    adjust: { sharpen: 0, contrast: 0, saturation: 0 },
+    text: { textContent: '', textSize: 10, textColor: '#ffffff' },
+    quality: { targetSize: '3' },
+  };
+  document.querySelectorAll('[data-reset-tool]').forEach(btn => {
+    btn.addEventListener('click', () => resetTool(btn.dataset.resetTool));
+  });
+  function resetTool(tool) {
+    if (!sourceImg) return;
+    const defaults = TOOL_DEFAULTS[tool];
+    if (defaults) Object.entries(defaults).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val; });
+    if (tool === 'crop') state.rotate90 = 0;
+    if (tool === 'border') { shape = 'die-cut'; syncShapeButtons(); document.getElementById('outlineThickness').value = 0; document.getElementById('whiteBorder').value = 0; document.getElementById('glow').value = 0; }
+    if (tool === 'text') { textX = 50; textY = 15; textPos = 'top'; syncTextPosButtons(); }
+    if (tool === 'cutout') { bgColor = null; document.getElementById('bgTolerance').value = 35; updateBgSwatch(); }
+    syncLabels();
+    render(canvas, PREVIEW_SIZE);
+    if (tool === 'quality') updateDpiReadout();
+    commitHistory();
+  }
+
+  // =====================================================================
+  // Before / After
+  // =====================================================================
+  beforeAfterBtn.onclick = () => {
+    if (!sourceImg) return;
+    showingBefore = !showingBefore;
+    if (showingBefore) {
+      beforeAfterBtn.textContent = '👀 Showing BEFORE — tap for After';
+      drawRawOriginal();
+    } else {
+      beforeAfterBtn.textContent = '👀 Before / After';
+      render(canvas, PREVIEW_SIZE);
+    }
+  };
+  function drawRawOriginal() {
+    const nw = sourceImg.naturalWidth, nh = sourceImg.naturalHeight;
+    const scale = PREVIEW_SIZE / Math.max(nw, nh);
+    canvas.width = Math.round(nw * scale);
+    canvas.height = Math.round(nh * scale);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(sourceImg, 0, 0, canvas.width, canvas.height);
+  }
+
+  // =====================================================================
+  // Undo / Redo
+  // =====================================================================
+  const SNAPSHOT_INPUT_IDS = ['cropTop', 'cropBottom', 'cropLeft', 'cropRight', 'rotateFine', 'zoom',
+    'sharpen', 'contrast', 'saturation', 'bgTolerance', 'outlineThickness', 'outlineColor',
+    'whiteBorder', 'glow', 'glowColor', 'textContent', 'textSize', 'textColor'];
+  let history = [];
+  let historyIndex = -1;
+
+  function getSnapshot() {
+    const values = {};
+    SNAPSHOT_INPUT_IDS.forEach(id => { values[id] = document.getElementById(id).value; });
+    return { values, shape, textPos, textX, textY, rotate90: state.rotate90, bgColor: bgColor ? { ...bgColor } : null };
+  }
+  function applySnapshot(s) {
+    SNAPSHOT_INPUT_IDS.forEach(id => { document.getElementById(id).value = s.values[id]; });
+    shape = s.shape; textPos = s.textPos; textX = s.textX; textY = s.textY;
+    state.rotate90 = s.rotate90;
+    bgColor = s.bgColor ? { ...s.bgColor } : null;
+    syncShapeButtons();
+    syncTextPosButtons();
+    updateBgSwatch();
+    syncLabels();
+    showingBefore = false;
+    beforeAfterBtn.textContent = '👀 Before / After';
+    render(canvas, PREVIEW_SIZE);
+    updateDpiReadout();
+  }
+  function resetHistoryWith(snap) {
+    history = [snap];
+    historyIndex = 0;
+    updateUndoRedoButtons();
+  }
+  function commitHistory() {
+    const snap = getSnapshot();
+    history = history.slice(0, historyIndex + 1);
+    history.push(snap);
+    if (history.length > 50) history.shift();
+    historyIndex = history.length - 1;
+    updateUndoRedoButtons();
+    autoSaveDraftSilently();
+  }
+  function updateUndoRedoButtons() {
+    document.getElementById('undoBtn').disabled = historyIndex <= 0;
+    document.getElementById('redoBtn').disabled = historyIndex >= history.length - 1;
+  }
+  document.getElementById('undoBtn').onclick = () => {
+    if (historyIndex <= 0) return;
+    historyIndex--; applySnapshot(history[historyIndex]); updateUndoRedoButtons();
+  };
+  document.getElementById('redoBtn').onclick = () => {
+    if (historyIndex >= history.length - 1) return;
+    historyIndex++; applySnapshot(history[historyIndex]); updateUndoRedoButtons();
+  };
+
+  // =====================================================================
+  // Save Design (persists image + full edit state so you can resume later)
+  // =====================================================================
+  function autoSaveDraftSilently() {
+    // Keep the draft in sync in the background so an accidental tab close
+    // doesn't lose work — the visible "Save" button is for peace of mind.
+    if (!sourceImg) return;
+    STORE.saveEditorDraft({ image: sourceImg.src, snapshot: getSnapshot(), savedAt: Date.now() });
+  }
+  document.getElementById('saveDesignBtn').onclick = () => {
+    if (!sourceImg) { alert('Upload an image first.'); return; }
+    autoSaveDraftSilently();
+    const btn = document.getElementById('saveDesignBtn');
+    const original = btn.textContent;
+    btn.textContent = '✅ Saved';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  };
+
+  // =====================================================================
+  // Pixel helpers — UNCHANGED from the original implementation
+  // =====================================================================
   function applyContrastSaturation(imageData, contrastPct, saturationPct) {
     const data = imageData.data;
     const c = (contrastPct + 100) / 100; // 0..2
@@ -284,7 +551,11 @@
     c.closePath();
   }
 
-  // ---------- Main render pipeline ----------
+  // =====================================================================
+  // Main render pipeline — UNCHANGED except the text-drawing step, which
+  // now uses draggable textX/textY percentages instead of a fixed
+  // top/center/bottom offset.
+  // =====================================================================
   function render(targetCanvas, targetLongSide) {
     if (!sourceImg) return;
     const s = state();
@@ -382,17 +653,19 @@
     // 5. the actual sticker artwork on top
     tctx.drawImage(work, 0, 0);
 
-    // 6. text
+    // 6. text — draggable position (textX/textY are percentages of outW/outH)
     if (s.text) {
       const fontPx = Math.max(8, (s.textSize / 100) * outW);
       tctx.font = `900 ${fontPx}px "Segoe UI", Arial, sans-serif`;
       tctx.textAlign = 'center';
+      tctx.textBaseline = 'middle';
       tctx.fillStyle = s.textColor;
       tctx.strokeStyle = 'rgba(0,0,0,0.5)';
       tctx.lineWidth = Math.max(1, fontPx * 0.08);
-      const y = textPos === 'top' ? fontPx * 1.2 : textPos === 'bottom' ? outH - fontPx * 0.6 : outH / 2;
-      tctx.strokeText(s.text, outW / 2, y);
-      tctx.fillText(s.text, outW / 2, y);
+      const tx = (textX / 100) * outW;
+      const ty = (textY / 100) * outH;
+      tctx.strokeText(s.text, tx, ty);
+      tctx.fillText(s.text, tx, ty);
     }
   }
 
@@ -405,19 +678,21 @@
     if (dpi >= 300) { cls = 'dpi-good'; label = 'Good — print-ready'; }
     else if (dpi >= 150) { cls = 'dpi-borderline'; label = 'Borderline — may look slightly soft'; }
 
-    document.getElementById('resInfo').innerHTML = `
-      <span class="stock-badge ok">${sourceImg.naturalWidth}×${sourceImg.naturalHeight}px</span>
-    `;
+    dpiBadgeTop.innerHTML = `<span class="${cls}">${dpi} DPI</span> <span class="dim">@ ${sizeIn}"</span> — <span class="${cls}">${label}</span>`;
+
     document.getElementById('dpiReadout').innerHTML = `
+      <div class="flex between"><span>Image size</span><span>${sourceImg.naturalWidth}×${sourceImg.naturalHeight}px</span></div>
       <div class="flex between"><span>Estimated DPI at ${sizeIn}"</span><span class="${cls}">${dpi} DPI</span></div>
       <div class="${cls} small">${label}</div>
       ${dpi < 300 ? '<p class="help">For sharpest results, upload a larger source photo or choose a smaller print size — this tool can\'t invent detail that isn\'t in your original image.</p>' : ''}
     `;
   }
 
-  // ---------- Export ----------
-  function exportPng(transparent) {
-    if (!sourceImg) return;
+  // =====================================================================
+  // Export + Add to Shop
+  // =====================================================================
+  function renderFullRes(transparent) {
+    if (!sourceImg) return null;
     const full = document.createElement('canvas');
     render(full, Math.max(sourceImg.naturalWidth, sourceImg.naturalHeight));
     let outCanvas = full;
@@ -430,13 +705,31 @@
       fctx.drawImage(full, 0, 0);
       outCanvas = flat;
     }
-    render(canvas, 700); // restore preview-sized canvas after using render() for export
+    render(canvas, PREVIEW_SIZE); // restore preview-sized canvas after using render() for export
+    return outCanvas.toDataURL('image/png');
+  }
+
+  function exportPng(transparent) {
+    const dataUrl = renderFullRes(transparent);
+    if (!dataUrl) return;
     const a = document.createElement('a');
-    a.href = outCanvas.toDataURL('image/png');
+    a.href = dataUrl;
     a.download = transparent ? 'sticker-transparent.png' : 'sticker-highres.png';
     a.click();
   }
   document.getElementById('exportPngBtn').onclick = () => exportPng(false);
   document.getElementById('exportTransparentBtn').onclick = () => exportPng(true);
-  document.getElementById('resetEditorBtn').onclick = () => location.reload();
+  document.getElementById('exportPngBtnBar').onclick = () => exportPng(false);
+  document.getElementById('resetEditorBtn').onclick = () => {
+    if (confirm('Start over with a brand new image? This clears your current design (any saved draft stays until you overwrite it).')) location.reload();
+  };
+
+  function addToShop() {
+    if (!sourceImg) { alert('Upload and edit an image first.'); return; }
+    const dataUrl = renderFullRes(true); // transparent version looks best as a product image
+    STORE.setPendingEditorImage(dataUrl);
+    location.href = 'admin/products.html?fromEditor=1';
+  }
+  document.getElementById('addToShopBtn').onclick = addToShop;
+  document.getElementById('addToShopBtn2').onclick = addToShop;
 })();

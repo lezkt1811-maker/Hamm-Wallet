@@ -3,133 +3,192 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sticker Creator — StarSticker Y2K</title>
+<title>Sticker Studio — StarSticker Y2K</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="editor-body">
 <div id="site-header"></div>
 
+<!-- ===== Sticky preview: stays on screen while tool panels scroll below ===== -->
 <div class="editor-sticky-preview" id="editorStickyPreview">
+  <span class="pixel-star corner-star tl">✦</span><span class="pixel-star corner-star tr">✧</span>
   <div class="editor-preview-toprow">
-    <span class="small dim">👀 Your sticker (stays visible while you scroll)</span>
-    <span id="resInfo"></span>
+    <span class="studio-brand">🌈 Sticker Studio</span>
+    <div class="flex" style="gap:6px">
+      <button type="button" class="icon-btn" id="undoBtn" title="Undo" disabled>↺</button>
+      <button type="button" class="icon-btn" id="redoBtn" title="Redo" disabled>↻</button>
+    </div>
   </div>
-  <div class="editor-canvas-wrap">
+
+  <div id="dpiBadgeTop" class="dpi-badge-top" style="display:none"></div>
+
+  <div class="editor-canvas-wrap" id="canvasWrap">
     <canvas id="stickerCanvas" width="500" height="500"></canvas>
   </div>
-  <div id="uploadRow" class="mt8">
-    <input type="file" id="uploadInput" accept="image/*">
-    <button type="button" class="btn chrome small" id="changeImageBtn" style="display:none">🔄 Change Image</button>
+
+  <div class="flex between wrap mt8">
+    <button type="button" class="btn ghost small" id="beforeAfterBtn" style="display:none">👀 Before / After</button>
+    <div id="uploadRow">
+      <input type="file" id="uploadInput" accept="image/*">
+      <button type="button" class="btn chrome small" id="changeImageBtn" style="display:none">🔄 Change Image</button>
+    </div>
   </div>
-</div>
 
-<div class="page">
-  <h1 class="mt16">🎨 Sticker Creator</h1>
-
-  <div id="editorControls" style="display:none">
-
-    <details class="section" open>
-      <summary>✂️ Crop, Rotate &amp; Resize</summary>
-      <div class="section-body">
-        <label>Crop top <span id="cropTopVal"></span>%</label><input type="range" id="cropTop" min="0" max="45" value="0">
-        <label>Crop bottom <span id="cropBottomVal"></span>%</label><input type="range" id="cropBottom" min="0" max="45" value="0">
-        <label>Crop left <span id="cropLeftVal"></span>%</label><input type="range" id="cropLeft" min="0" max="45" value="0">
-        <label>Crop right <span id="cropRightVal"></span>%</label><input type="range" id="cropRight" min="0" max="45" value="0">
-        <div class="flex mt8">
-          <button type="button" class="btn chrome small" id="rotateLeftBtn">⟲ Rotate 90°</button>
-          <button type="button" class="btn chrome small" id="rotateRightBtn">⟳ Rotate 90°</button>
-        </div>
-        <label class="mt8">Fine rotate <span id="rotateFineVal"></span>°</label><input type="range" id="rotateFine" min="-45" max="45" value="0">
-        <label>Zoom / resize <span id="zoomVal"></span>%</label><input type="range" id="zoom" min="50" max="150" value="100">
-      </div>
-    </details>
-
-    <details class="section">
-      <summary>🖌️ Sharpen, Contrast &amp; Saturation</summary>
-      <div class="section-body">
-        <label>Sharpen <span id="sharpenVal"></span>%</label><input type="range" id="sharpen" min="0" max="100" value="0">
-        <label>Contrast <span id="contrastVal"></span></label><input type="range" id="contrast" min="-100" max="100" value="0">
-        <label>Saturation <span id="saturationVal"></span></label><input type="range" id="saturation" min="-100" max="100" value="0">
-      </div>
-    </details>
-
-    <details class="section">
-      <summary>🧹 Remove Background (basic)</summary>
-      <div class="section-body">
-        <p class="help">Best-effort color-based removal — not AI-grade. Works best on solid-color backgrounds. Click a spot on the image to pick the background color, or use Auto (corners).</p>
-        <div class="flex">
-          <button type="button" class="btn small" id="pickBgBtn">🎯 Pick Color (tap canvas)</button>
-          <button type="button" class="btn small chrome" id="autoBgBtn">Auto (corners)</button>
-          <button type="button" class="btn small ghost" id="clearBgBtn">Clear</button>
-        </div>
-        <label class="mt8">Tolerance <span id="bgToleranceVal"></span></label><input type="range" id="bgTolerance" min="5" max="100" value="35">
-        <div id="bgColorSwatch" class="mt8"></div>
-      </div>
-    </details>
-
-    <details class="section">
-      <summary>🔲 Shape, Outline, White Border &amp; Glow</summary>
-      <div class="section-body">
-        <label>Sticker shape</label>
-        <div class="shape-btns">
-          <button type="button" data-shape="die-cut" class="active">Die-Cut</button>
-          <button type="button" data-shape="circle">Circle</button>
-          <button type="button" data-shape="square">Square</button>
-          <button type="button" data-shape="rectangle">Rectangle</button>
-        </div>
-
-        <label class="mt8">Outline thickness <span id="outlineVal"></span></label><input type="range" id="outlineThickness" min="0" max="10" value="0">
-        <input type="color" id="outlineColor" value="#ff2fb0">
-
-        <label class="mt8">White sticker border <span id="borderVal"></span></label><input type="range" id="whiteBorder" min="0" max="10" value="0">
-
-        <label class="mt8">Glow intensity <span id="glowVal"></span></label><input type="range" id="glow" min="0" max="10" value="0">
-        <input type="color" id="glowColor" value="#3ffbe0">
-      </div>
-    </details>
-
-    <details class="section">
-      <summary>🔤 Add Text</summary>
-      <div class="section-body">
-        <label for="textContent">Text</label>
-        <input id="textContent" placeholder="besties 4ever">
-        <div class="field-row">
-          <div><label>Size <span id="textSizeVal"></span></label><input type="range" id="textSize" min="4" max="20" value="10"></div>
-          <div><label for="textColor">Color</label><input type="color" id="textColor" value="#ffffff"></div>
-        </div>
-        <label>Position</label>
-        <div class="shape-btns">
-          <button type="button" data-textpos="top" class="active">Top</button>
-          <button type="button" data-textpos="center">Center</button>
-          <button type="button" data-textpos="bottom">Bottom</button>
-        </div>
-      </div>
-    </details>
-
-    <details class="section" open>
-      <summary>📏 Print Quality Check</summary>
-      <div class="section-body">
-        <label for="targetSize">Intended print size</label>
-        <select id="targetSize">
-          <option value="2">2 in</option>
-          <option value="3" selected>3 in</option>
-          <option value="4">4 in</option>
-          <option value="5">5 in</option>
-        </select>
-        <div id="dpiReadout" class="mt8"></div>
-      </div>
-    </details>
-
-    <div class="win">
-      <div class="win-body">
-        <button class="btn block" id="exportPngBtn">⬇️ Export High-Res PNG</button>
-        <button class="btn secondary block mt8" id="exportTransparentBtn">⬇️ Export Transparent PNG</button>
-        <button class="btn chrome block mt8" id="resetEditorBtn">↺ Start Over</button>
+  <div id="resumeDraftBanner" class="alert info mt8" style="display:none">
+    <div class="flex between wrap" style="gap:8px">
+      <span class="small">📂 You have an unfinished design saved.</span>
+      <div class="flex" style="gap:6px">
+        <button type="button" class="btn small" id="resumeDraftBtn">Resume</button>
+        <button type="button" class="btn small ghost" id="discardDraftBtn">Discard</button>
       </div>
     </div>
   </div>
+
+  <div class="preset-strip" id="presetStrip" style="display:none">
+    <button type="button" data-preset="vivid">🎆 Vivid</button>
+    <button type="button" data-preset="y2k-glossy">💿 Y2K Glossy</button>
+    <button type="button" data-preset="sticker-pop">✨ Sticker Pop</button>
+    <button type="button" data-preset="soft">☁️ Soft</button>
+    <button type="button" data-preset="high-contrast">⚡ High Contrast</button>
+  </div>
 </div>
-<div id="site-footer"></div>
+
+<!-- ===== Scrollable tool panels ===== -->
+<div class="page editor-page">
+  <div id="editorControls" style="display:none">
+
+    <div class="tool-panel" data-tool="crop">
+      <h2 class="tool-title">✂️ Crop, Rotate &amp; Resize</h2>
+      <label>Crop top <span id="cropTopVal"></span>%</label><input type="range" id="cropTop" min="0" max="45" value="0">
+      <label>Crop bottom <span id="cropBottomVal"></span>%</label><input type="range" id="cropBottom" min="0" max="45" value="0">
+      <label>Crop left <span id="cropLeftVal"></span>%</label><input type="range" id="cropLeft" min="0" max="45" value="0">
+      <label>Crop right <span id="cropRightVal"></span>%</label><input type="range" id="cropRight" min="0" max="45" value="0">
+      <div class="flex mt8">
+        <button type="button" class="btn chrome small" id="rotateLeftBtn">⟲ Rotate 90°</button>
+        <button type="button" class="btn chrome small" id="rotateRightBtn">⟳ Rotate 90°</button>
+      </div>
+      <label class="mt8">Fine rotate <span id="rotateFineVal"></span>°</label><input type="range" id="rotateFine" min="-45" max="45" value="0">
+      <label>Zoom / resize <span id="zoomVal"></span>%</label><input type="range" id="zoom" min="50" max="150" value="100">
+      <button type="button" class="btn ghost small block mt16" data-reset-tool="crop">↺ Reset Crop</button>
+    </div>
+
+    <div class="tool-panel" data-tool="adjust" hidden>
+      <h2 class="tool-title">🎛️ Sharpen, Contrast &amp; Saturation</h2>
+      <label>Sharpen <span id="sharpenVal"></span>%</label><input type="range" id="sharpen" min="0" max="100" value="0">
+      <label>Contrast <span id="contrastVal"></span></label><input type="range" id="contrast" min="-100" max="100" value="0">
+      <label>Saturation <span id="saturationVal"></span></label><input type="range" id="saturation" min="-100" max="100" value="0">
+      <button type="button" class="btn ghost small block mt16" data-reset-tool="adjust">↺ Reset Adjustments</button>
+    </div>
+
+    <div class="tool-panel" data-tool="cutout" hidden>
+      <h2 class="tool-title">🧹 Cutout (Background Removal)</h2>
+      <p class="help">Best-effort color-based removal, not AI-grade — works best on a solid, flat-color background. Tap "Pick Color", then tap the background in the picture.</p>
+      <button type="button" class="btn block" id="pickBgBtn">🎯 Pick Color — tap the picture</button>
+      <div class="flex mt8">
+        <button type="button" class="btn small chrome" id="autoBgBtn">Auto (corners)</button>
+        <button type="button" class="btn small ghost" id="clearBgBtn">Clear</button>
+      </div>
+      <div id="bgColorSwatch" class="cutout-swatch mt8"></div>
+      <label class="mt8">Tolerance <span id="bgToleranceVal"></span></label><input type="range" id="bgTolerance" min="5" max="100" value="35">
+      <button type="button" class="btn ghost small block mt16" data-reset-tool="cutout">↺ Reset Cutout</button>
+    </div>
+
+    <div class="tool-panel" data-tool="border" hidden>
+      <h2 class="tool-title">🔲 Shape &amp; Border</h2>
+      <label>Sticker shape</label>
+      <div class="shape-btns">
+        <button type="button" data-shape="die-cut" class="active">Die-Cut</button>
+        <button type="button" data-shape="circle">Circle</button>
+        <button type="button" data-shape="square">Square</button>
+        <button type="button" data-shape="rectangle">Rectangle</button>
+      </div>
+
+      <div class="border-row mt16">
+        <div class="border-row-label"><b>Outline</b> — a thin color line right at the sticker's edge</div>
+        <div class="field-row">
+          <input type="range" id="outlineThickness" min="0" max="10" value="0">
+          <input type="color" id="outlineColor" value="#ff2fb0" title="Outline color">
+        </div>
+        <span class="small dim">Thickness: <span id="outlineVal">0</span></span>
+      </div>
+
+      <div class="border-row mt16">
+        <div class="border-row-label"><b>White Border</b> — the classic sticker-shop white margin, drawn outside the outline</div>
+        <input type="range" id="whiteBorder" min="0" max="10" value="0">
+        <span class="small dim">Thickness: <span id="borderVal">0</span></span>
+      </div>
+
+      <div class="border-row mt16">
+        <div class="border-row-label"><b>Glow</b> — soft colored light behind the whole sticker</div>
+        <div class="field-row">
+          <input type="range" id="glow" min="0" max="10" value="0">
+          <input type="color" id="glowColor" value="#3ffbe0" title="Glow color">
+        </div>
+        <span class="small dim">Intensity: <span id="glowVal">0</span></span>
+      </div>
+      <button type="button" class="btn ghost small block mt16" data-reset-tool="border">↺ Reset Shape &amp; Border</button>
+    </div>
+
+    <div class="tool-panel" data-tool="text" hidden>
+      <h2 class="tool-title">🔤 Add Text</h2>
+      <p class="help">💡 Drag directly on the picture above to move your text — tap anywhere to jump it there.</p>
+      <label for="textContent">Text</label>
+      <input id="textContent" placeholder="besties 4ever">
+      <div class="field-row">
+        <div><label>Size <span id="textSizeVal"></span></label><input type="range" id="textSize" min="4" max="20" value="10"></div>
+        <div><label for="textColor">Color</label><input type="color" id="textColor" value="#ffffff"></div>
+      </div>
+      <label>Quick position</label>
+      <div class="shape-btns">
+        <button type="button" data-textpos="top" class="active">Top</button>
+        <button type="button" data-textpos="center">Center</button>
+        <button type="button" data-textpos="bottom">Bottom</button>
+      </div>
+      <button type="button" class="btn ghost small block mt16" data-reset-tool="text">↺ Reset Text</button>
+    </div>
+
+    <div class="tool-panel" data-tool="quality" hidden>
+      <h2 class="tool-title">📏 Print Quality Check</h2>
+      <label for="targetSize">Intended print size</label>
+      <select id="targetSize">
+        <option value="2">2 in</option>
+        <option value="3" selected>3 in</option>
+        <option value="4">4 in</option>
+        <option value="5">5 in</option>
+      </select>
+      <div id="dpiReadout" class="mt8"></div>
+    </div>
+
+    <div class="tool-panel" data-tool="export" hidden>
+      <h2 class="tool-title">⬇️ Export</h2>
+      <button class="btn block" id="exportPngBtn">⬇️ Export High-Res PNG</button>
+      <button class="btn secondary block mt8" id="exportTransparentBtn">⬇️ Export Transparent PNG</button>
+      <button class="btn rainbow block mt16" id="addToShopBtn2">✨ ADD TO SHOP</button>
+      <button class="btn chrome block mt16" id="resetEditorBtn">↺ Start Over (new image)</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== Bottom tool tabs ===== -->
+<div class="editor-toolbar" id="editorToolbar" style="display:none">
+  <button type="button" data-tool="crop" class="active"><span class="tt-icon">✂️</span><span class="tt-label">Crop</span></button>
+  <button type="button" data-tool="adjust"><span class="tt-icon">🎛️</span><span class="tt-label">Adjust</span></button>
+  <button type="button" data-tool="cutout"><span class="tt-icon">🧹</span><span class="tt-label">Cutout</span></button>
+  <button type="button" data-tool="border"><span class="tt-icon">🔲</span><span class="tt-label">Border</span></button>
+  <button type="button" data-tool="text"><span class="tt-icon">🔤</span><span class="tt-label">Text</span></button>
+  <button type="button" data-tool="quality"><span class="tt-icon">📏</span><span class="tt-label">Quality</span></button>
+  <button type="button" data-tool="export"><span class="tt-icon">⬇️</span><span class="tt-label">Export</span></button>
+</div>
+
+<!-- ===== Bottom sticky action bar ===== -->
+<div class="editor-action-bar" id="editorActionBar" style="display:none">
+  <button type="button" class="btn chrome small" id="saveDesignBtn">💾 Save</button>
+  <button type="button" class="btn secondary small" id="exportPngBtnBar">⬇️ Export PNG</button>
+  <button type="button" class="btn rainbow" id="addToShopBtn">✨ ADD TO SHOP</button>
+</div>
+
+<div id="site-footer" class="editor-footer"></div>
 
 <script src="js/store.js"></script>
 <script src="js/nav.js"></script>

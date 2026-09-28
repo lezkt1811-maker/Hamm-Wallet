@@ -16,6 +16,20 @@
 
   let currentImage = '';
 
+  // ---------- Handoff from the Sticker Studio ("Add to Shop") ----------
+  if (new URLSearchParams(location.search).get('fromEditor') === '1') {
+    const pendingImage = STORE.takePendingEditorImage();
+    if (pendingImage) {
+      currentImage = pendingImage;
+      imagePreview.innerHTML = `<img src="${currentImage}" style="max-height:120px;border-radius:8px">`;
+      formSection.open = true;
+      setTimeout(() => {
+        formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('name').focus();
+      }, 50);
+    }
+  }
+
   function updateProfitPreview() {
     const { profit, marginPct, markupPct } = STORE.productMath(priceInput.value, costInput.value);
     profitPreview.innerHTML = `

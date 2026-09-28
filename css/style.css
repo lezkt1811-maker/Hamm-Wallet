@@ -367,35 +367,111 @@ details.section .section-body { padding: 4px 16px 16px; }
 .dim { color: var(--text-dim); }
 .pixel-star { color: var(--yellow); }
 
-/* ---------- Sticker editor ---------- */
-.editor-shell { display: flex; flex-direction: column; gap: 14px; }
+/* ---------- Sticker Studio (editor) ---------- */
+body.editor-body { background: #050308; }
+
+/* Give the whole page room above the two fixed bottom bars so content
+   never hides behind them, and above nothing extra at the top since the
+   preview is sticky, not fixed. */
+.editor-page { padding-bottom: 132px; }
+.editor-footer { padding-bottom: 132px; }
 
 /* Preview stays pinned to the top of the screen (below the topbar) while
-   the settings below it scroll — so you can always see the sticker while
-   adjusting sliders, instead of scrolling up and down to check. */
+   the tool panels below it scroll — so you can always see the sticker
+   while adjusting a slider, instead of scrolling up and down to check. */
 .editor-sticky-preview {
   position: sticky;
   top: var(--sticky-top, 0px);
   z-index: 40;
-  background: var(--bg-panel);
-  border-bottom: 2px solid var(--purple);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.45);
-  padding: 10px 14px;
+  background: linear-gradient(180deg, #0f0c1f, #050308);
+  border-bottom: 2px solid transparent;
+  border-image: linear-gradient(90deg, var(--pink), var(--blue), var(--purple), var(--cyan)) 1;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.6);
+  padding: 10px 14px 8px;
+  overflow: hidden;
 }
-.editor-sticky-preview .editor-canvas-wrap { max-height: 34vh; min-height: 160px; }
-.editor-sticky-preview #stickerCanvas { max-height: 34vh; height: auto; }
-.editor-preview-toprow { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.corner-star { position: absolute; font-size: 0.9rem; opacity: 0.55; pointer-events: none; }
+.corner-star.tl { top: 6px; left: 8px; } .corner-star.tr { top: 6px; right: 8px; }
+.studio-brand { font-weight: 800; font-size: 0.95rem; background: linear-gradient(90deg, var(--pink), var(--cyan)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.editor-preview-toprow { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+
+.icon-btn {
+  background: var(--bg-panel-2);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: var(--text);
+  border-radius: 10px;
+  width: 40px; height: 36px;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.icon-btn:disabled { opacity: 0.35; }
+
+.dpi-badge-top {
+  text-align: center;
+  font-size: 0.8rem;
+  background: var(--bg-panel-2);
+  border-radius: 999px;
+  padding: 5px 10px;
+  margin-bottom: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
 
 .editor-canvas-wrap {
-  background: repeating-conic-gradient(#241f4d 0% 25%, #1c1740 0% 50%) 50% / 20px 20px;
+  background:
+    linear-gradient(45deg, #d9d9d9 25%, transparent 25%) -10px 0/20px 20px,
+    linear-gradient(-45deg, #d9d9d9 25%, transparent 25%) -10px 0/20px 20px,
+    linear-gradient(45deg, transparent 75%, #d9d9d9 75%) -10px 0/20px 20px,
+    linear-gradient(-45deg, transparent 75%, #d9d9d9 75%) -10px 0/20px 20px,
+    #f2f2f2;
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 10px;
   min-height: 280px;
+  border: 3px solid var(--chrome-1);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.4) inset, 0 0 26px rgba(255,47,176,0.35), 0 0 46px rgba(63,216,255,0.25);
 }
-#stickerCanvas { max-width: 100%; border-radius: 8px; box-shadow: 0 0 30px rgba(162,75,255,0.4); }
+.editor-sticky-preview .editor-canvas-wrap { max-height: 32vh; min-height: 150px; }
+.editor-sticky-preview #stickerCanvas { max-height: 32vh; height: auto; }
+#stickerCanvas { max-width: 100%; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.5); touch-action: manipulation; }
+
+.preset-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 6px 0 2px;
+  -webkit-overflow-scrolling: touch;
+}
+.preset-strip button {
+  flex-shrink: 0;
+  white-space: nowrap;
+  background: var(--bg-panel-2);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.preset-strip button:active { transform: scale(0.96); }
+
+/* ---------- Tool panels (only the active one is shown) ---------- */
+.tool-panel {
+  background: var(--bg-panel);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 16px;
+  margin-top: 14px;
+}
+.tool-title { font-size: 1rem; margin: 0 0 10px; }
+.border-row { background: var(--bg-panel-2); border-radius: 12px; padding: 10px 12px; }
+.border-row-label { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 8px; }
+.cutout-swatch { min-height: 20px; }
+.color-chip { display: inline-block; width: 16px; height: 16px; border-radius: 4px; vertical-align: middle; margin-left: 6px; border: 1px solid rgba(255,255,255,0.4); }
+#pickBgBtn.active { background: linear-gradient(135deg, var(--pink), var(--purple)); color: #fff; }
+
 .tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .slider-row { display: flex; align-items: center; gap: 10px; }
 .slider-row input[type=range] { flex: 1; min-height: 30px; }
@@ -415,6 +491,85 @@ details.section .section-body { padding: 4px 16px 16px; }
 .dpi-good { color: var(--cyan); font-weight: 800; }
 .dpi-borderline { color: var(--yellow); font-weight: 800; }
 .dpi-low { color: #ff8787; font-weight: 800; }
+
+/* ---------- Big, thumb-friendly range sliders ---------- */
+.tool-panel input[type=range], .editor-sticky-preview input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--pink), var(--blue));
+  margin: 10px 0 4px;
+}
+.tool-panel input[type=range]::-webkit-slider-thumb, .editor-sticky-preview input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--chrome-1), var(--chrome-2));
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  cursor: pointer;
+}
+.tool-panel input[type=range]::-moz-range-thumb, .editor-sticky-preview input[type=range]::-moz-range-thumb {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--chrome-1), var(--chrome-2));
+  border: 2px solid #fff;
+  cursor: pointer;
+}
+.tool-panel input[type=color] { width: 52px; height: 44px; padding: 4px; flex: 0 0 auto; cursor: pointer; }
+
+/* ---------- Bottom tool tabs ---------- */
+.editor-toolbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 60px;
+  display: flex;
+  background: linear-gradient(180deg, #150f2e, #0a0818);
+  border-top: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 -6px 20px rgba(0,0,0,0.5);
+  z-index: 45;
+  padding: 4px 2px;
+}
+.editor-toolbar button {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 2px;
+  font-size: 0.62rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.editor-toolbar button .tt-icon { font-size: 1.15rem; }
+.editor-toolbar button.active { color: var(--cyan); background: rgba(63,251,224,0.1); }
+
+/* ---------- Bottom sticky action bar ---------- */
+.editor-action-bar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: #0a0818;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding: 8px 10px;
+  z-index: 46;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+.editor-action-bar .btn { flex: 1; padding: 12px 10px; font-size: 0.85rem; white-space: nowrap; }
+.btn.rainbow {
+  background: linear-gradient(90deg, var(--pink), var(--yellow), var(--cyan), var(--purple), var(--pink));
+  background-size: 300% auto;
+  animation: rainbow-shift 5s linear infinite;
+  color: #1a0a20;
+  font-weight: 900;
+  flex: 1.4 !important;
+  box-shadow: 0 0 18px rgba(255,47,176,0.5), 0 4px 0 rgba(0,0,0,0.3);
+}
 
 /* ---------- Chrome divider ---------- */
 .chrome-divider {
