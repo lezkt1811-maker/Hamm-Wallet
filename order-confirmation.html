@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Order Confirmed — StarSticker Y2K</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<div class="page">
+  <div id="confirmBody" class="mt16"></div>
+</div>
+<div id="site-footer"></div>
+
+<script src="js/store.js"></script>
+<script src="js/nav.js"></script>
+<script>
+  renderSiteHeader('');
+  renderSiteFooter();
+  const params = new URLSearchParams(location.search);
+  const order = STORE.getOrder(params.get('id'));
+  const isTest = params.get('test') === '1';
+  const el = document.getElementById('confirmBody');
+
+  if (!order) {
+    el.innerHTML = '<div class="win"><div class="win-body center">No order found. <a href="shop.html">Back to shop</a></div></div>';
+  } else {
+    el.innerHTML = `
+      <div class="hero">
+        <div class="sparkle-row">✦ ★ ✧</div>
+        <h1 class="rainbow-text">${isTest ? 'Test Order Placed' : 'Order Confirmed'}!</h1>
+        <p class="dim">Order #${order.id.slice(-8).toUpperCase()}</p>
+      </div>
+      ${isTest ? '<div class="alert warn">This was a TEST order — no real payment was taken because Stripe is not connected yet. See js/stripe-integration.js.</div>' : ''}
+      <div class="win">
+        <div class="win-titlebar"><span>🧾 Summary</span><span class="status-pill status-${order.status}">${order.status}</span></div>
+        <div class="win-body">
+          ${order.items.map(i => `<div class="flex between small mb8"><span>${i.qty}× ${escapeHtml(i.name)}</span><span>${money(i.price * i.qty)}</span></div>`).join('')}
+          <div class="chrome-divider"></div>
+          <div class="flex between" style="font-weight:800"><span>Total</span><span>${money(order.amountTotal)}</span></div>
+          <p class="small dim mt16">Confirmation sent to ${escapeHtml(order.customer.email)}.</p>
+        </div>
+      </div>
+      <a href="shop.html" class="btn block">Keep Shopping</a>
+    `;
+  }
+</script>
+</body>
+</html>

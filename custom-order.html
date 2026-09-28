@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Custom Sticker Request — StarSticker Y2K</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<div class="page">
+  <h1 class="mt16">💌 Custom Sticker Request</h1>
+  <p class="dim">Describe your idea or upload an image. We'll show you a preview here before anything is charged — nothing is billed until we confirm your order together.</p>
+
+  <div class="win">
+    <div class="win-titlebar"><span>📝 Tell Us What You Want</span></div>
+    <div class="win-body">
+      <form id="customForm">
+        <label for="ccName">Your name</label>
+        <input id="ccName" required>
+        <label for="ccEmail">Email</label>
+        <input id="ccEmail" type="email" required>
+
+        <label for="ccImage">Upload an image (optional)</label>
+        <input type="file" id="ccImage" accept="image/*">
+        <div id="ccImagePreview" class="mt8"></div>
+
+        <label for="ccText">Custom text (optional)</label>
+        <input id="ccText" placeholder="e.g. your name, a quote">
+
+        <div class="field-row">
+          <div>
+            <label for="ccQty">Quantity</label>
+            <input id="ccQty" type="number" min="1" value="1">
+          </div>
+          <div>
+            <label for="ccSize">Size</label>
+            <select id="ccSize"><option>2in</option><option selected>3in</option><option>4in</option><option>5in</option></select>
+          </div>
+        </div>
+
+        <label for="ccNotes">Notes / details</label>
+        <textarea id="ccNotes" placeholder="Colors, style, placement ideas..."></textarea>
+
+        <button type="submit" class="btn block mt16">👀 Show Preview</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="previewSection" style="display:none">
+    <div class="win">
+      <div class="win-titlebar"><span>✨ Your Preview</span></div>
+      <div class="win-body" id="previewBody"></div>
+    </div>
+    <button class="btn block" id="submitRequestBtn">✅ Send Request (no payment yet)</button>
+  </div>
+
+  <div id="doneSection" style="display:none">
+    <div class="win"><div class="win-body center">
+      <h2>Request Sent! 🎉</h2>
+      <p>We'll review your custom idea and reach out at your email to confirm price and details before charging anything.</p>
+      <a href="shop.html" class="btn mt8">Browse Shop While You Wait</a>
+    </div></div>
+  </div>
+</div>
+<div id="site-footer"></div>
+
+<script src="js/store.js"></script>
+<script src="js/nav.js"></script>
+<script>
+  renderSiteHeader('custom-order.html'); renderSiteFooter();
+  let ccImageData = '';
+  document.getElementById('ccImage').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      ccImageData = reader.result;
+      document.getElementById('ccImagePreview').innerHTML = `<img src="${ccImageData}" style="max-height:140px;border-radius:8px">`;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  let pendingRequest = null;
+  document.getElementById('customForm').addEventListener('submit', e => {
+    e.preventDefault();
+    pendingRequest = {
+      name: document.getElementById('ccName').value.trim(),
+      email: document.getElementById('ccEmail').value.trim(),
+      image: ccImageData,
+      customText: document.getElementById('ccText').value.trim(),
+      qty: Number(document.getElementById('ccQty').value) || 1,
+      size: document.getElementById('ccSize').value,
+      notes: document.getElementById('ccNotes').value.trim(),
+    };
+    document.getElementById('previewBody').innerHTML = `
+      ${pendingRequest.image ? `<img src="${pendingRequest.image}" style="max-height:200px;border-radius:12px;display:block;margin:0 auto">` : '<p class="dim center">(no image uploaded — text/notes only)</p>'}
+      ${pendingRequest.customText ? `<p class="center mt8" style="font-weight:800">"${escapeHtml(pendingRequest.customText)}"</p>` : ''}
+      <div class="chrome-divider"></div>
+      <div class="flex between small"><span>Quantity</span><span>${pendingRequest.qty}</span></div>
+      <div class="flex between small"><span>Size</span><span>${pendingRequest.size}</span></div>
+      ${pendingRequest.notes ? `<p class="small dim mt8">${escapeHtml(pendingRequest.notes)}</p>` : ''}
+      <p class="help mt8">This is a preview of your REQUEST, not a final printed sticker mockup. We'll confirm final design and price with you by email.</p>
+    `;
+    document.getElementById('previewSection').style.display = 'block';
+    document.getElementById('previewSection').scrollIntoView({ behavior: 'smooth' });
+  });
+
+  document.getElementById('submitRequestBtn').addEventListener('click', () => {
+    if (!pendingRequest) return;
+    STORE.addCustomRequest(pendingRequest);
+    document.getElementById('previewSection').style.display = 'none';
+    document.getElementById('customForm').closest('.win').style.display = 'none';
+    document.getElementById('doneSection').style.display = 'block';
+  });
+</script>
+</body>
+</html>

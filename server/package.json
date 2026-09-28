@@ -1,0 +1,14 @@
+{
+  "name": "starsticker-checkout-server",
+  "version": "1.0.0",
+  "description": "Optional tiny server that creates real multi-item Stripe Checkout Sessions for StarSticker Y2K. Not required to run the main site.",
+  "main": "create-checkout-session.js",
+  "scripts": {
+    "start": "node create-checkout-session.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "stripe": "^16.0.0"
+  }
+}

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StarSticker Y2K — Pop Culture Stickers</title>
+<meta name="description" content="Y2K-inspired pop culture sticker shop. Shop stickers, design your own, and get them shipped.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<div class="page">
+  <div class="hero">
+    <div class="sparkle-row">✦ ★ ✧ ☆ ✦</div>
+    <h1><span class="rainbow-text">Stickers for the Internet Kids</span></h1>
+    <p>Pop culture. Y2K energy. Rainbow chrome. Made to be slapped on everything you own.</p>
+    <div class="flex" style="justify-content:center">
+      <a href="shop.html" class="btn">🛍️ Shop Stickers</a>
+      <a href="editor.html" class="btn secondary">🎨 Make Your Own</a>
+    </div>
+  </div>
+
+  <div class="win">
+    <div class="win-titlebar"><span>✨ new_drops.exe</span><div class="win-dots"><span></span><span></span><span></span></div></div>
+    <div class="win-body">
+      <div id="homeProducts" class="grid"><p class="dim">Loading stickers...</p></div>
+      <div class="center mt16"><a href="shop.html" class="btn chrome">See the Whole Shop →</a></div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns: repeat(2,1fr)">
+    <div class="win">
+      <div class="win-titlebar"><span>🎨 Design Tool</span></div>
+      <div class="win-body small">Upload a photo, crop it, sharpen it, add a glow &amp; a white border, then export a print-ready sticker PNG.
+        <div class="mt8"><a href="editor.html" class="btn small block">Open Editor</a></div>
+      </div>
+    </div>
+    <div class="win">
+      <div class="win-titlebar"><span>💌 Custom Order</span></div>
+      <div class="win-body small">Want a one-of-one sticker? Send your idea and we'll preview it before you pay.
+        <div class="mt8"><a href="custom-order.html" class="btn small secondary block">Request Custom</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chrome-divider"></div>
+  <div class="win">
+    <div class="win-titlebar"><span>📦 Why Us</span></div>
+    <div class="win-body">
+      <div class="grid" style="grid-template-columns:repeat(2,1fr)">
+        <div class="small">✦ <b>Print-ready quality</b> — sharp lines, vivid color</div>
+        <div class="small">✦ <b>Original &amp; licensed-safe</b> designs only</div>
+        <div class="small">✦ <b>Fast shipping</b> — printed and packed quick</div>
+        <div class="small">✦ <b>Design your own</b> in the browser, no app needed</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="site-footer"></div>
+
+<script src="js/store.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/seed.js"></script>
+<script>
+  renderSiteHeader('index.html');
+  renderSiteFooter();
+
+  function stickerCard(p) {
+    const stockClass = p.qtyOnHand <= 0 ? 'out' : (p.qtyOnHand <= 5 ? 'low' : 'ok');
+    const stockLabel = p.qtyOnHand <= 0 ? 'Out of stock' : (p.qtyOnHand <= 5 ? 'Low stock' : 'In stock');
+    return `
+      <a href="product.html?id=${p.id}" class="card">
+        ${p.bestSeller ? '<div class="badge">🔥 Best Seller</div>' : (p.limitedDrop ? '<div class="badge limited">⚡ Limited</div>' : '')}
+        <div class="card-img">${p.image ? `<img src="${p.image}" alt="${escapeHtml(p.name)}">` : '🌈'}</div>
+        <div class="card-body">
+          <div class="card-title">${escapeHtml(p.name)}</div>
+          <div class="flex between"><span class="card-price">${money(p.price)}</span><span class="stock-badge ${stockClass}">${stockLabel}</span></div>
+        </div>
+      </a>`;
+  }
+
+  const products = STORE.getProducts().slice(0, 6);
+  document.getElementById('homeProducts').innerHTML = products.length
+    ? products.map(stickerCard).join('')
+    : '<p class="dim">No stickers yet — add some in Admin → Products.</p>';
+</script>
+</body>
+</html>

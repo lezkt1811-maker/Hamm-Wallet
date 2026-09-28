@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact — StarSticker Y2K</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<div class="page">
+  <h1 class="mt16">📮 Contact</h1>
+  <div class="win">
+    <div class="win-titlebar"><span>✉️ send_message.exe</span></div>
+    <div class="win-body">
+      <form id="contactForm">
+        <label for="cName">Name</label>
+        <input id="cName" required>
+        <label for="cEmail">Your email</label>
+        <input id="cEmail" type="email" required>
+        <label for="cOrder">Order number (if applicable)</label>
+        <input id="cOrder" placeholder="#A1B2C3D4">
+        <label for="cMessage">Message</label>
+        <textarea id="cMessage" required placeholder="How can we help?"></textarea>
+        <button type="submit" class="btn block mt16">Send Message</button>
+        <p class="help center mt8">This opens your email app addressed to us — nothing is sent through this website directly.</p>
+      </form>
+    </div>
+  </div>
+  <p class="center dim small">Or email us directly at <b>hello@starstickery2k.example</b> (replace with your real business email).</p>
+</div>
+<div id="site-footer"></div>
+<script src="js/store.js"></script>
+<script src="js/nav.js"></script>
+<script>
+  renderSiteHeader('contact.html'); renderSiteFooter();
+  document.getElementById('contactForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = document.getElementById('cName').value;
+    const email = document.getElementById('cEmail').value;
+    const order = document.getElementById('cOrder').value;
+    const msg = document.getElementById('cMessage').value;
+    const body = `From: ${name} (${email})\nOrder: ${order || 'n/a'}\n\n${msg}`;
+    window.location.href = `mailto:hello@starstickery2k.example?subject=${encodeURIComponent('Contact from ' + name)}&body=${encodeURIComponent(body)}`;
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sticker Creator — StarSticker Y2K</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<div class="page">
+  <h1 class="mt16">🎨 Sticker Creator</h1>
+
+  <div class="win">
+    <div class="win-titlebar"><span>👀 Preview</span></div>
+    <div class="win-body">
+      <div class="editor-canvas-wrap">
+        <canvas id="stickerCanvas" width="500" height="500"></canvas>
+      </div>
+      <div id="uploadRow" class="mt16">
+        <input type="file" id="uploadInput" accept="image/*">
+      </div>
+      <div id="resInfo" class="mt8"></div>
+    </div>
+  </div>
+
+  <div id="editorControls" style="display:none">
+
+    <details class="section" open>
+      <summary>✂️ Crop, Rotate &amp; Resize</summary>
+      <div class="section-body">
+        <label>Crop top <span id="cropTopVal"></span>%</label><input type="range" id="cropTop" min="0" max="45" value="0">
+        <label>Crop bottom <span id="cropBottomVal"></span>%</label><input type="range" id="cropBottom" min="0" max="45" value="0">
+        <label>Crop left <span id="cropLeftVal"></span>%</label><input type="range" id="cropLeft" min="0" max="45" value="0">
+        <label>Crop right <span id="cropRightVal"></span>%</label><input type="range" id="cropRight" min="0" max="45" value="0">
+        <div class="flex mt8">
+          <button type="button" class="btn chrome small" id="rotateLeftBtn">⟲ Rotate 90°</button>
+          <button type="button" class="btn chrome small" id="rotateRightBtn">⟳ Rotate 90°</button>
+        </div>
+        <label class="mt8">Fine rotate <span id="rotateFineVal"></span>°</label><input type="range" id="rotateFine" min="-45" max="45" value="0">
+        <label>Zoom / resize <span id="zoomVal"></span>%</label><input type="range" id="zoom" min="50" max="150" value="100">
+      </div>
+    </details>
+
+    <details class="section">
+      <summary>🖌️ Sharpen, Contrast &amp; Saturation</summary>
+      <div class="section-body">
+        <label>Sharpen <span id="sharpenVal"></span>%</label><input type="range" id="sharpen" min="0" max="100" value="0">
+        <label>Contrast <span id="contrastVal"></span></label><input type="range" id="contrast" min="-100" max="100" value="0">
+        <label>Saturation <span id="saturationVal"></span></label><input type="range" id="saturation" min="-100" max="100" value="0">
+      </div>
+    </details>
+
+    <details class="section">
+      <summary>🧹 Remove Background (basic)</summary>
+      <div class="section-body">
+        <p class="help">Best-effort color-based removal — not AI-grade. Works best on solid-color backgrounds. Click a spot on the image to pick the background color, or use Auto (corners).</p>
+        <div class="flex">
+          <button type="button" class="btn small" id="pickBgBtn">🎯 Pick Color (tap canvas)</button>
+          <button type="button" class="btn small chrome" id="autoBgBtn">Auto (corners)</button>
+          <button type="button" class="btn small ghost" id="clearBgBtn">Clear</button>
+        </div>
+        <label class="mt8">Tolerance <span id="bgToleranceVal"></span></label><input type="range" id="bgTolerance" min="5" max="100" value="35">
+        <div id="bgColorSwatch" class="mt8"></div>
+      </div>
+    </details>
+
+    <details class="section">
+      <summary>🔲 Shape, Outline, White Border &amp; Glow</summary>
+      <div class="section-body">
+        <label>Sticker shape</label>
+        <div class="shape-btns">
+          <button type="button" data-shape="die-cut" class="active">Die-Cut</button>
+          <button type="button" data-shape="circle">Circle</button>
+          <button type="button" data-shape="square">Square</button>
+          <button type="button" data-shape="rectangle">Rectangle</button>
+        </div>
+
+        <label class="mt8">Outline thickness <span id="outlineVal"></span></label><input type="range" id="outlineThickness" min="0" max="10" value="0">
+        <input type="color" id="outlineColor" value="#ff2fb0">
+
+        <label class="mt8">White sticker border <span id="borderVal"></span></label><input type="range" id="whiteBorder" min="0" max="10" value="0">
+
+        <label class="mt8">Glow intensity <span id="glowVal"></span></label><input type="range" id="glow" min="0" max="10" value="0">
+        <input type="color" id="glowColor" value="#3ffbe0">
+      </div>
+    </details>
+
+    <details class="section">
+      <summary>🔤 Add Text</summary>
+      <div class="section-body">
+        <label for="textContent">Text</label>
+        <input id="textContent" placeholder="besties 4ever">
+        <div class="field-row">
+          <div><label>Size <span id="textSizeVal"></span></label><input type="range" id="textSize" min="4" max="20" value="10"></div>
+          <div><label for="textColor">Color</label><input type="color" id="textColor" value="#ffffff"></div>
+        </div>
+        <label>Position</label>
+        <div class="shape-btns">
+          <button type="button" data-textpos="top" class="active">Top</button>
+          <button type="button" data-textpos="center">Center</button>
+          <button type="button" data-textpos="bottom">Bottom</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="section" open>
+      <summary>📏 Print Quality Check</summary>
+      <div class="section-body">
+        <label for="targetSize">Intended print size</label>
+        <select id="targetSize">
+          <option value="2">2 in</option>
+          <option value="3" selected>3 in</option>
+          <option value="4">4 in</option>
+          <option value="5">5 in</option>
+        </select>
+        <div id="dpiReadout" class="mt8"></div>
+      </div>
+    </details>
+
+    <div class="win">
+      <div class="win-body">
+        <button class="btn block" id="exportPngBtn">⬇️ Export High-Res PNG</button>
+        <button class="btn secondary block mt8" id="exportTransparentBtn">⬇️ Export Transparent PNG</button>
+        <button class="btn chrome block mt8" id="resetEditorBtn">↺ Start Over</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="site-footer"></div>
+
+<script src="js/store.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/editor.js"></script>
+</body>
+</html>

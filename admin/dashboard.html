@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Dashboard — StarSticker Y2K</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<div class="page">
+  <h1 class="mt16">📊 Business Dashboard</h1>
+
+  <div class="alert warn">
+    ⚠️ <b>Copyright &amp; licensing reminder:</b> characters, celebrity photos, logos, movie/album art, and trademarks may require permission or licensing before you sell them. Tag every product's design type honestly (Original / Parody-Inspired / Licensed / Public Domain) in Products, and don't build this business around copying copyrighted art without rights. When unsure, treat it as licensed and get permission first.
+  </div>
+
+  <div class="flex wrap mb16">
+    <a href="products.html" class="btn small">📦 Products</a>
+    <a href="orders.html" class="btn small secondary">🧾 Orders</a>
+    <a href="expenses.html" class="btn small chrome">💸 Expenses &amp; Tax</a>
+    <a href="pricing-calculator.html" class="btn small ghost">🧮 Pricing Calculator</a>
+  </div>
+
+  <div id="statGrid" class="stat-grid mb16"></div>
+
+  <div class="win">
+    <div class="win-titlebar"><span>🔥 Best Sellers</span></div>
+    <div class="win-body" id="bestSellers"></div>
+  </div>
+
+  <div class="win">
+    <div class="win-titlebar"><span>📦 Inventory Alerts</span></div>
+    <div class="win-body" id="inventoryAlerts"></div>
+  </div>
+</div>
+<div id="site-footer"></div>
+
+<script src="../js/store.js"></script>
+<script src="../js/nav.js"></script>
+<script src="../js/admin-dashboard.js"></script>
+</body>
+</html>

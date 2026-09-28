@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Products — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<div class="page">
+  <h1 class="mt16">📦 Products</h1>
+  <a href="dashboard.html" class="btn ghost small">← Dashboard</a>
+
+  <details class="section mt16" id="formSection">
+    <summary>➕ Add / Edit Product</summary>
+    <div class="section-body">
+      <form id="productForm">
+        <input type="hidden" id="productId">
+        <label for="name">Product name *</label>
+        <input id="name" required placeholder="Y2K Star Burst">
+
+        <label for="description">Description</label>
+        <textarea id="description" placeholder="Chrome pixel-star die-cut sticker..."></textarea>
+
+        <label for="imageInput">Sticker image</label>
+        <input type="file" id="imageInput" accept="image/*">
+        <div id="imagePreview" class="mt8"></div>
+        <p class="help">Stored directly in your browser. Keep images reasonably small (under ~1MB) — a lot of large images can fill up local storage.</p>
+
+        <div class="field-row">
+          <div>
+            <label for="price">Sell price ($) *</label>
+            <input id="price" type="number" step="0.01" min="0" required>
+          </div>
+          <div>
+            <label for="cost">Cost per unit ($) *</label>
+            <input id="cost" type="number" step="0.01" min="0" required>
+          </div>
+        </div>
+
+        <div id="profitPreview" class="alert info mt8"></div>
+
+        <div class="field-row">
+          <div>
+            <label for="qtyOnHand">Quantity on hand</label>
+            <input id="qtyOnHand" type="number" min="0" value="0">
+          </div>
+          <div>
+            <label for="restockAt">Low-stock alert at</label>
+            <input id="restockAt" type="number" min="0" value="5">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label for="size">Size</label>
+            <input id="size" placeholder="3in">
+          </div>
+          <div>
+            <label for="type">Sticker type</label>
+            <select id="type">
+              <option>die-cut</option><option>holographic</option><option>glitter</option>
+              <option>matte</option><option>glossy</option><option>transparent</option><option>assorted</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label for="sku">SKU</label>
+            <input id="sku" placeholder="ORIG-STAR-001">
+          </div>
+          <div>
+            <label for="collection">Collection</label>
+            <input id="collection" placeholder="Y2K Classics">
+          </div>
+        </div>
+
+        <label for="tags">Tags (comma separated)</label>
+        <input id="tags" placeholder="y2k, stars, original">
+
+        <label for="designType">Design type *</label>
+        <select id="designType">
+          <option value="original">Original design</option>
+          <option value="parody-inspired">Parody-inspired</option>
+          <option value="licensed">Licensed (have permission)</option>
+          <option value="public-domain">Public domain</option>
+        </select>
+        <p class="help">Be honest here — this is for your own records so you know which designs might need licensing.</p>
+
+        <label for="stripePaymentLink">Stripe Payment Link (optional)</label>
+        <input id="stripePaymentLink" placeholder="https://buy.stripe.com/...">
+        <p class="help">Create one at dashboard.stripe.com/payment-links. Lets this product be bought with real Stripe checkout even without a server — see js/stripe-integration.js.</p>
+
+        <div class="field-row mt8">
+          <label class="flex" style="align-items:center;font-weight:400"><input type="checkbox" id="bestSeller" style="width:auto;margin-right:8px">Best Seller badge</label>
+          <label class="flex" style="align-items:center;font-weight:400"><input type="checkbox" id="limitedDrop" style="width:auto;margin-right:8px">Limited Drop badge</label>
+        </div>
+
+        <div class="flex mt16">
+          <button type="submit" class="btn block">💾 Save Product</button>
+          <button type="button" class="btn ghost block" id="cancelEditBtn" style="display:none">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </details>
+
+  <h2 class="mt24">All Products</h2>
+  <div id="productList"></div>
+</div>
+<div id="site-footer"></div>
+
+<script src="../js/store.js"></script>
+<script src="../js/nav.js"></script>
+<script src="../js/admin-products.js"></script>
+</body>
+</html>

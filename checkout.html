@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkout — StarSticker Y2K</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<div class="page">
+  <h1 class="mt16">💳 Checkout</h1>
+
+  <div class="win">
+    <div class="win-titlebar"><span>🧾 Order Summary</span></div>
+    <div class="win-body" id="orderSummary"></div>
+  </div>
+
+  <div class="win">
+    <div class="win-titlebar"><span>📮 Your Info</span></div>
+    <div class="win-body">
+      <label for="custEmail">Email (for order updates &amp; receipt)</label>
+      <input id="custEmail" type="email" placeholder="you@example.com" required>
+      <label for="custName">Full name</label>
+      <input id="custName" type="text" placeholder="Jane Doe" required>
+      <label for="custAddress">Shipping address</label>
+      <textarea id="custAddress" placeholder="Street, City, State, ZIP"></textarea>
+    </div>
+  </div>
+
+  <div id="stripeStatus"></div>
+
+  <div class="win">
+    <div class="win-body">
+      <button class="btn block" id="payBtn">🔒 Pay with Stripe</button>
+      <p class="help center mt8" id="payHelp"></p>
+    </div>
+  </div>
+</div>
+<div id="site-footer"></div>
+
+<script src="js/store.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/stripe-integration.js"></script>
+<script src="js/checkout.js"></script>
+</body>
+</html>

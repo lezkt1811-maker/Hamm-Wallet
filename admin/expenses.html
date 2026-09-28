@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expenses &amp; Tax — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<div class="page">
+  <h1 class="mt16">💸 Expenses &amp; Tax</h1>
+  <a href="dashboard.html" class="btn ghost small">← Dashboard</a>
+
+  <div class="alert warn mt16">These figures are <b>estimates for your own tracking only</b> — not tax advice. Talk to an accountant or use software like Wave/QuickBooks for actual filing.</div>
+
+  <details class="section" open>
+    <summary>➕ Log an Expense</summary>
+    <div class="section-body">
+      <form id="expenseForm">
+        <label for="expCategory">Category</label>
+        <select id="expCategory">
+          <option>Materials</option>
+          <option>Printer Ink</option>
+          <option>Sticker Paper</option>
+          <option>Packaging</option>
+          <option>Shipping</option>
+          <option>Marketplace Fees</option>
+          <option>Website Fees</option>
+          <option>Advertising</option>
+          <option>Equipment</option>
+          <option>Other</option>
+        </select>
+        <div class="field-row">
+          <div>
+            <label for="expAmount">Amount ($)</label>
+            <input id="expAmount" type="number" step="0.01" min="0" required>
+          </div>
+          <div>
+            <label for="expDate">Date</label>
+            <input id="expDate" type="date">
+          </div>
+        </div>
+        <label for="expNote">Note</label>
+        <input id="expNote" placeholder="Cricut vinyl roll">
+        <button type="submit" class="btn block mt16">💾 Log Expense</button>
+      </form>
+    </div>
+  </details>
+
+  <h2 class="mt24">By Category</h2>
+  <div id="categoryBars" class="win"><div class="win-body" id="categoryBarsBody"></div></div>
+
+  <h2 class="mt24">All Expenses</h2>
+  <div id="expenseList"></div>
+
+  <h2 class="mt24">📄 Yearly Tax Summary</h2>
+  <div class="win">
+    <div class="win-body">
+      <label for="taxYear">Year</label>
+      <select id="taxYear"></select>
+      <div id="taxSummaryBody" class="mt16"></div>
+      <button class="btn block mt16" id="downloadTaxBtn">⬇️ Download Summary (.csv)</button>
+    </div>
+  </div>
+</div>
+<div id="site-footer"></div>
+
+<script src="../js/store.js"></script>
+<script src="../js/nav.js"></script>
+<script src="../js/admin-expenses.js"></script>
+</body>
+</html>
