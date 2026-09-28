@@ -724,12 +724,13 @@
     if (confirm('Start over with a brand new image? This clears your current design (any saved draft stays until you overwrite it).')) location.reload();
   };
 
-  function addToShop() {
+  function addToCart() {
     if (!sourceImg) { alert('Upload and edit an image first.'); return; }
-    const dataUrl = renderFullRes(true); // transparent version looks best as a product image
-    STORE.setPendingEditorImage(dataUrl);
-    location.href = 'admin/products.html?fromEditor=1';
+    const dataUrl = renderFullRes(true); // transparent version looks best
+    STORE.addCustomStickerToCart(dataUrl, 1);
+    alert('✨ Sticker added to cart! Proceed to checkout to order.');
+    location.href = 'cart.html';
   }
-  document.getElementById('addToShopBtn').onclick = addToShop;
-  document.getElementById('addToShopBtn2').onclick = addToShop;
+  document.getElementById('addToCartBtn').onclick = addToCart;
+  document.getElementById('addToCartBtnBar').onclick = addToCart;
 })();

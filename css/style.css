@@ -199,6 +199,7 @@ img { max-width: 100%; display: block; }
 }
 .btn.block { display: block; width: 100%; text-align: center; }
 .btn.small { padding: 8px 14px; font-size: 0.85rem; min-height: 38px; }
+.btn.huge { padding: 18px 28px; font-size: 1.1rem; min-height: 56px; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn.danger { background: linear-gradient(135deg, #ff5757, #b6172c); }
 

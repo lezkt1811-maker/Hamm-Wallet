@@ -160,11 +160,14 @@
     </div>
 
     <div class="tool-panel" data-tool="export" hidden>
-      <h2 class="tool-title">⬇️ Export</h2>
-      <button class="btn block" id="exportPngBtn">⬇️ Export High-Res PNG</button>
-      <button class="btn secondary block mt8" id="exportTransparentBtn">⬇️ Export Transparent PNG</button>
-      <button class="btn rainbow block mt16" id="addToShopBtn2">✨ ADD TO SHOP</button>
-      <button class="btn chrome block mt16" id="resetEditorBtn">↺ Start Over (new image)</button>
+      <h2 class="tool-title">⬇️ Export & Order</h2>
+      <button class="btn rainbow block huge" id="addToCartBtn">✨ ADD THIS STICKER TO CART</button>
+      <div style="margin-top:16px;border-top:2px solid var(--chrome-1);padding-top:16px">
+        <div class="small dim mb8">Or download for personal use:</div>
+        <button class="btn small chrome block" id="exportPngBtn">⬇️ High-Res PNG</button>
+        <button class="btn small secondary block mt8" id="exportTransparentBtn">⬇️ Transparent PNG</button>
+      </div>
+      <button class="btn ghost small block mt16" id="resetEditorBtn">↺ Start Over</button>
     </div>
 
   </div>
@@ -184,8 +187,7 @@
 <!-- ===== Bottom sticky action bar ===== -->
 <div class="editor-action-bar" id="editorActionBar" style="display:none">
   <button type="button" class="btn chrome small" id="saveDesignBtn">💾 Save</button>
-  <button type="button" class="btn secondary small" id="exportPngBtnBar">⬇️ Export PNG</button>
-  <button type="button" class="btn rainbow" id="addToShopBtn">✨ ADD TO SHOP</button>
+  <button type="button" class="btn rainbow" id="addToCartBtnBar">✨ ADD TO CART</button>
 </div>
 
 <div id="site-footer" class="editor-footer"></div>

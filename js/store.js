@@ -127,10 +127,28 @@ const STORE = {
     if (line) { line.qty += qty; } else { cart.push({ productId, qty }); }
     this.saveCart(cart);
   },
+  addCustomStickerToCart(designImage, qty) {
+    const cart = this.getCart();
+    const customItem = {
+      id: this.uid('custom'),
+      isCustom: true,
+      designImage,
+      qty: qty || 1,
+      price: 3.99,
+      name: 'Custom Sticker',
+      createdAt: Date.now(),
+    };
+    cart.push(customItem);
+    this.saveCart(cart);
+    return customItem;
+  },
   updateCartQty(productId, qty) {
     let cart = this.getCart();
-    if (qty <= 0) { cart = cart.filter(c => c.productId !== productId); }
-    else { const line = cart.find(c => c.productId === productId); if (line) line.qty = qty; }
+    if (qty <= 0) { cart = cart.filter(c => c.productId !== productId && c.id !== productId); }
+    else {
+      const line = cart.find(c => c.productId === productId || c.id === productId);
+      if (line) line.qty = qty;
+    }
     this.saveCart(cart);
   },
   clearCart() {
@@ -139,6 +157,9 @@ const STORE = {
   cartLines() {
     const cart = this.getCart();
     return cart.map(c => {
+      if (c.isCustom) {
+        return { isCustom: true, product: c, qty: c.qty, lineTotal: c.price * c.qty };
+      }
       const product = this.getProduct(c.productId);
       return product ? { product, qty: c.qty, lineTotal: product.price * c.qty } : null;
     }).filter(Boolean);

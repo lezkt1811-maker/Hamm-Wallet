@@ -59,14 +59,23 @@
     // Fallback: record a local "new" order so the shop owner can test /
     // fulfill manually, and tell the shopper honestly what happened.
     const order = STORE.createOrder({
-      items: lines.map(l => ({ productId: l.product.id, name: l.product.name, qty: l.qty, price: l.product.price })),
+      items: lines.map(l => ({
+        productId: l.product.id,
+        name: l.product.name,
+        qty: l.qty,
+        price: l.product.price,
+        isCustom: l.isCustom,
+        designImage: l.isCustom ? l.product.designImage : undefined,
+      })),
       customer: { email, name, address },
       amountTotal: total,
       status: 'new',
       paymentStatus: result.reason === 'not_configured' ? 'test_mode_unpaid' : 'failed',
       isCustom: false,
     });
-    lines.forEach(l => STORE.adjustInventory(l.product.id, -l.qty));
+    lines.forEach(l => {
+      if (!l.isCustom) STORE.adjustInventory(l.product.id, -l.qty);
+    });
     STORE.clearCart();
     location.href = 'order-confirmation.html?id=' + order.id + (result.reason === 'not_configured' ? '&test=1' : '&err=1');
   };
