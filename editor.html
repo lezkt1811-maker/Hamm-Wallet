@@ -8,21 +8,23 @@
 </head>
 <body>
 <div id="site-header"></div>
+
+<div class="editor-sticky-preview" id="editorStickyPreview">
+  <div class="editor-preview-toprow">
+    <span class="small dim">👀 Your sticker (stays visible while you scroll)</span>
+    <span id="resInfo"></span>
+  </div>
+  <div class="editor-canvas-wrap">
+    <canvas id="stickerCanvas" width="500" height="500"></canvas>
+  </div>
+  <div id="uploadRow" class="mt8">
+    <input type="file" id="uploadInput" accept="image/*">
+    <button type="button" class="btn chrome small" id="changeImageBtn" style="display:none">🔄 Change Image</button>
+  </div>
+</div>
+
 <div class="page">
   <h1 class="mt16">🎨 Sticker Creator</h1>
-
-  <div class="win">
-    <div class="win-titlebar"><span>👀 Preview</span></div>
-    <div class="win-body">
-      <div class="editor-canvas-wrap">
-        <canvas id="stickerCanvas" width="500" height="500"></canvas>
-      </div>
-      <div id="uploadRow" class="mt16">
-        <input type="file" id="uploadInput" accept="image/*">
-      </div>
-      <div id="resInfo" class="mt8"></div>
-    </div>
-  </div>
 
   <div id="editorControls" style="display:none">
 

@@ -369,6 +369,23 @@ details.section .section-body { padding: 4px 16px 16px; }
 
 /* ---------- Sticker editor ---------- */
 .editor-shell { display: flex; flex-direction: column; gap: 14px; }
+
+/* Preview stays pinned to the top of the screen (below the topbar) while
+   the settings below it scroll — so you can always see the sticker while
+   adjusting sliders, instead of scrolling up and down to check. */
+.editor-sticky-preview {
+  position: sticky;
+  top: var(--sticky-top, 0px);
+  z-index: 40;
+  background: var(--bg-panel);
+  border-bottom: 2px solid var(--purple);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+  padding: 10px 14px;
+}
+.editor-sticky-preview .editor-canvas-wrap { max-height: 34vh; min-height: 160px; }
+.editor-sticky-preview #stickerCanvas { max-height: 34vh; height: auto; }
+.editor-preview-toprow { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+
 .editor-canvas-wrap {
   background: repeating-conic-gradient(#241f4d 0% 25%, #1c1740 0% 50%) 50% / 20px 20px;
   border-radius: 16px;

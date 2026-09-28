@@ -16,6 +16,25 @@
   const ctx = canvas.getContext('2d');
   const controls = document.getElementById('editorControls');
   const uploadInput = document.getElementById('uploadInput');
+  const changeImageBtn = document.getElementById('changeImageBtn');
+  changeImageBtn.addEventListener('click', () => uploadInput.click());
+
+  // First upload uses the full file-picker input; after that, swap in a
+  // small "Change Image" button instead so the sticky preview bar at the
+  // top of the screen stays as compact as possible.
+  function collapseUploadRow() {
+    uploadInput.style.display = 'none';
+    changeImageBtn.style.display = 'inline-block';
+  }
+
+  // Keep the sticky preview bar positioned right below the (also sticky)
+  // site topbar, whatever its actual rendered height turns out to be.
+  function updateStickyOffset() {
+    const topbar = document.querySelector('.topbar');
+    document.documentElement.style.setProperty('--sticky-top', (topbar ? topbar.offsetHeight : 0) + 'px');
+  }
+  updateStickyOffset();
+  window.addEventListener('resize', updateStickyOffset);
 
   let sourceImg = null; // the uploaded <img>
   let bgColor = null;   // {r,g,b} sampled background color for removal
@@ -57,8 +76,10 @@
         sourceImg = img;
         bgColor = null;
         controls.style.display = 'block';
+        collapseUploadRow();
         render(canvas, 700);
         updateDpiReadout();
+        updateStickyOffset();
       };
       img.src = reader.result;
     };
